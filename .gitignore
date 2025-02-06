@@ -1,8 +1,8 @@
 node_modules
 index.html
 .env
-eslint.config.mjs
-Notes API Test.postman_collection.json
-Notes API Test.postman_environment.json
-pnpm-lock.yaml
+./eslint.config.mjs
+./Notes API Test.postman_collection.json
+./Notes API Test.postman_environment.json
+./pnpm-lock.yaml
 .gitignore
