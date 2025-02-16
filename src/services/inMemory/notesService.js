@@ -31,7 +31,7 @@ class notesServices {
         const note = this._notes.filter(note => note.id === id)[0];
 
         if (!note) {
-            throw new NotFoundError('catatan tidak ditemukan');
+            throw new NotFoundError('Catatan tidak ditemukan');
         }
 
         return note
