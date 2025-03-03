@@ -11,6 +11,7 @@ import auth from "./api/authentications/index.js"
 import NotesServices from "./services/postgres/noteService.js";
 import NoteValidator from "./validator/notes/index.js";
 import notes from './api/notes/index.js'
+
 // User
 import UsersService from "./services/postgres/UsersService.js";
 import UsersValidator from "./validator/users/index.js"
@@ -19,16 +20,26 @@ import users from './api/users/index.js'
 ///Error Handling
 import ClientError from "./exception/ClientError.js";
 import NotFoundError from "./exception/NotFoundError.js";
-//dotenf config
 
+//Collaborations 
+import CollaborationsService from "./services/postgres/AuthenticationService.js";
+import collaborations from "./api/collaborations/index.js"
+import CollaborationsValidator from "./validator/collaborations/index.js"
+
+//Exports
+import ExportsValidator from "./validator/exports/index.js";
+import exportsService from "./services/RabbitMQ/procedurService.js";
+import _exports from "./api/exports/index.js"
+
+//dotenf config
 dotenv.config()
 
 const init = async () => {
 
-    const notesService = new NotesServices();
+    const collaborationsService = new CollaborationsService();
+    const notesService = new NotesServices(collaborationsService);
     const userService = new UsersService()
     const authenticationsService = new AuthenticationService()
-
 
 
     const server = Hapi.server({
@@ -38,7 +49,11 @@ const init = async () => {
             cors: {
                 origin: ['*']
             }
-        }
+        },
+        // debug: {
+        //     request: ['error']
+        // }
+
 
     })
     // registrasi plugin eksternal
@@ -90,12 +105,27 @@ const init = async () => {
                 tokenManager: TokenManager,
                 validator: AuthenticationsValidator
             }
-        }
+        },
+        {
+            plugin: collaborations,
+            options: {
+                collaborationsService,
+                notesService,
+                validator: CollaborationsValidator,
+            },
+        },
+        {
+            plugin: _exports,
+            options: {
+                service: exportsService,
+                validator: ExportsValidator,
+            },
+        },
     ]);
     server.ext('onPreResponse', (request, h) => {
         // mendapatkan konteks response dari request
         const { response } = request;
-
+        // console.log(response)
         if (response instanceof ClientError) {
             const newResponse = h.response({
                 status: 'fail',
