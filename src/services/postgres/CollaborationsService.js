@@ -3,7 +3,7 @@ import pg from "pg"
 const { Pool } = pg
 
 class CollaborationsService {
-    constructor() {
+    constructor(cacheService) {
         this._pool = new Pool({
             database: process.env.DB_NAME,
             host: process.env.DB_HOST,
@@ -11,6 +11,7 @@ class CollaborationsService {
             password: process.env.DB_PASS,
             port: process.env.DB_PORT,
         })
+        this._cacheService = cacheService;
     }
 
     async addCollaboration(noteId, userId) {
@@ -26,6 +27,8 @@ class CollaborationsService {
         if (!result.rows.length) {
             throw new InvariantError('Kolaborasi gagal ditambahkan');
         }
+        await this._cacheService.delete(`notes:${userId}`);
+
         return result.rows[0].id;
     }
 
@@ -40,6 +43,8 @@ class CollaborationsService {
         if (!result.rows.length) {
             throw new InvariantError('Kolaborasi gagal dihapus');
         }
+        await this._cacheService.delete(`notes:${userId}`);
+
     }
     async verifyCollaborator(noteId, userId) {
         const query = {

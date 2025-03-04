@@ -1,6 +1,12 @@
 import Hapi from "@hapi/hapi"
 import dotenv from "dotenv"
 import Jwt from "@hapi/jwt"
+import inert from "@hapi/inert"
+
+//Libs
+import { fileURLToPath } from "url"
+import path, { dirname } from "path"
+
 //Token Manager
 import TokenManager from "./tokenize/TokenManager.js";
 //Auth 
@@ -31,16 +37,23 @@ import ExportsValidator from "./validator/exports/index.js";
 import exportsService from "./services/RabbitMQ/procedurService.js";
 import _exports from "./api/exports/index.js"
 
+//Uploads
+import uploads from "./api/uploads/index.js";
+import StorageService from "./services/S3/storageService.js";
+import uploadvalidator from "./validator/uploads/index.js"
+
+//Cache
+import CacheService from "./services/redis/cacheService.js";
 //dotenf config
 dotenv.config()
 
 const init = async () => {
-
-    const collaborationsService = new CollaborationsService();
-    const notesService = new NotesServices(collaborationsService);
+    const cacheService = new CacheService()
+    const collaborationsService = new CollaborationsService(cacheService);
+    const notesService = new NotesServices(collaborationsService, cacheService);
     const userService = new UsersService()
     const authenticationsService = new AuthenticationService()
-
+    const storageService = new StorageService()
 
     const server = Hapi.server({
         port: 3000,
@@ -61,6 +74,9 @@ const init = async () => {
         {
             plugin: Jwt,
         },
+        {
+            plugin: inert
+        }
     ]);
 
     // mendefinisikan strategy autentikasi jwt
@@ -119,6 +135,13 @@ const init = async () => {
             options: {
                 service: exportsService,
                 validator: ExportsValidator,
+            },
+        },
+        {
+            plugin: uploads,
+            options: {
+                service: storageService,
+                validator: uploadvalidator,
             },
         },
     ]);
